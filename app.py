@@ -202,7 +202,7 @@ def load_excel(file) -> pd.DataFrame:
     }
     lead_df = xl.parse('Lead',dtype=str).fillna('')
     lead_df.columns = [c.strip().lower() for c in lead_df.columns]
-  lead_df = lead_df.loc[:, ~lead_df.columns.duplicated()]
+    lead_df = lead_df.loc[:, ~lead_df.columns.duplicated()]
     lead_df = lead_df.rename(columns={c:lead_col_map[c] for c in lead_df.columns if c in lead_col_map})
     lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
     if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
