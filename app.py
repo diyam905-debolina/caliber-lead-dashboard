@@ -209,7 +209,7 @@ def load_excel(file) -> pd.DataFrame:
 ]
 
 lead_df = lead_df.loc[:, ~pd.Index(lead_df.columns).duplicated()]
-    lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
+   lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
     if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
  
     pot_col_map = {
