@@ -26,7 +26,14 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 html,body,[class*="css"]{ font-family:'Inter',sans-serif; }
-#MainMenu,footer,header{ visibility:hidden; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    color: white !important;
+}
 .main .block-container{ padding-top:1rem; padding-bottom:2rem; max-width:1400px; }
  
 .logo-bar{
