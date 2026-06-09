@@ -200,7 +200,8 @@ def load_excel(file) -> pd.DataFrame:
         'created time':'created_time','date':'created_time',
     }
     lead_df = xl.parse(sheet_name=0, dtype=str).fillna('')
-    lead_df.columns = [c.strip().lower() for c in lead_df.columns]
+    lead_df.columns = pd.io.parsers.ParserBase({'names':lead_df.columns})._maybe_dedup_names(lead_df.columns)
+lead_df.columns = [str(c).strip().lower() for c in lead_df.columns]
     lead_df = lead_df.rename(columns={c:lead_col_map[c] for c in lead_df.columns if c in lead_col_map})
     lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
     if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
@@ -213,7 +214,8 @@ def load_excel(file) -> pd.DataFrame:
         'created time':'created_time',
     }
     pot_df = xl.parse(sheet_name=1, dtype=str).fillna('')
-    pot_df.columns = [c.strip().lower() for c in pot_df.columns]
+    pot_df.columns = pd.io.parsers.ParserBase({'names':pot_df.columns})._maybe_dedup_names(pot_df.columns)
+pot_df.columns = [str(c).strip().lower() for c in pot_df.columns]
     pot_df = pot_df.rename(columns={c:pot_col_map[c] for c in pot_df.columns if c in pot_col_map})
     pot_df['sheet'] = 'Potential'; pot_df['lead_status'] = ''
  
