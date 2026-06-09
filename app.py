@@ -366,7 +366,7 @@ for f in uploaded_files:
         st.error(f"⚠️ {f.name}: {e}")
  
 if not monthly_data:
-    st.warning("No valid files loaded. Each Excel must have 'Lead' and 'Potential' sheets.")
+    st.error("Unable to read Excel file")
     st.stop()
  
 month_labels  = sorted(monthly_data.keys(),reverse=True)
