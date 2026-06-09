@@ -30,7 +30,8 @@ html, body, [class*="css"] {
 }
 
 /* Hide Streamlit default header */
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
 
 /* Main background */
 .main .block-container {
