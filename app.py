@@ -33,6 +33,11 @@ html, body, [class*="css"] {
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
 
+[data-testid="collapsedControl"] {
+    display: block !important;
+    visibility: visible !important;
+}
+
 /* Main background */
 .main .block-container {
     padding-top: 1.5rem;
