@@ -216,6 +216,7 @@ def load_excel(file) -> pd.DataFrame:
     }
     pot_df = xl.parse('Potential',dtype=str).fillna('')
     pot_df.columns = [c.strip().lower() for c in pot_df.columns]
+    pot_df = pot_df.loc[:, ~pot_df.columns.duplicated()]
     pot_df = pot_df.rename(columns={c:pot_col_map[c] for c in pot_df.columns if c in pot_col_map})
     pot_df['sheet'] = 'Potential'; pot_df['lead_status'] = ''
  
