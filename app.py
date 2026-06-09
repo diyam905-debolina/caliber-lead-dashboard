@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -199,9 +200,8 @@ def load_excel(file) -> pd.DataFrame:
         'conversion source':'conversion_source','channel':'conversion_source',
         'created time':'created_time','date':'created_time',
     }
-    lead_df = xl.parse(sheet_name=0, dtype=str).fillna('')
-    lead_df.columns = pd.io.parsers.ParserBase({'names':lead_df.columns})._maybe_dedup_names(lead_df.columns)
-lead_df.columns = [str(c).strip().lower() for c in lead_df.columns]
+    lead_df = xl.parse('Lead',dtype=str).fillna('')
+    lead_df.columns = [c.strip().lower() for c in lead_df.columns]
     lead_df = lead_df.rename(columns={c:lead_col_map[c] for c in lead_df.columns if c in lead_col_map})
     lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
     if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
@@ -213,9 +213,8 @@ lead_df.columns = [str(c).strip().lower() for c in lead_df.columns]
         'type of source':'type_of_source','conversion source':'conversion_source',
         'created time':'created_time',
     }
-    pot_df = xl.parse(sheet_name=1, dtype=str).fillna('')
-    pot_df.columns = pd.io.parsers.ParserBase({'names':pot_df.columns})._maybe_dedup_names(pot_df.columns)
-pot_df.columns = [str(c).strip().lower() for c in pot_df.columns]
+    pot_df = xl.parse('Potential',dtype=str).fillna('')
+    pot_df.columns = [c.strip().lower() for c in pot_df.columns]
     pot_df = pot_df.rename(columns={c:pot_col_map[c] for c in pot_df.columns if c in pot_col_map})
     pot_df['sheet'] = 'Potential'; pot_df['lead_status'] = ''
  
@@ -368,7 +367,7 @@ for f in uploaded_files:
         st.error(f"⚠️ {f.name}: {e}")
  
 if not monthly_data:
-    st.error("Unable to read Excel file")
+    st.warning("No valid files loaded. Each Excel must have 'Lead' and 'Potential' sheets.")
     st.stop()
  
 month_labels  = sorted(monthly_data.keys(),reverse=True)
