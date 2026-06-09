@@ -203,9 +203,12 @@ def load_excel(file) -> pd.DataFrame:
     lead_df = xl.parse('Lead',dtype=str).fillna('')
     lead_df.columns = [c.strip().lower() for c in lead_df.columns]
     lead_df = lead_df.loc[:, ~lead_df.columns.duplicated()]
-    lead_df = lead_df.rename(
-    columns=lambda c: lead_col_map[c] if c in lead_col_map else c
-)
+    lead_df.columns = [
+    lead_col_map[c] if c in lead_col_map else c
+    for c in lead_df.columns
+]
+
+lead_df = lead_df.loc[:, ~pd.Index(lead_df.columns).duplicated()]
     lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
     if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
  
@@ -219,9 +222,12 @@ def load_excel(file) -> pd.DataFrame:
     pot_df = xl.parse('Potential',dtype=str).fillna('')
     pot_df.columns = [c.strip().lower() for c in pot_df.columns]
     pot_df = pot_df.loc[:, ~pot_df.columns.duplicated()]
-    pot_df = pot_df.rename(
-    columns=lambda c: pot_col_map[c] if c in pot_col_map else c
-)
+    pot_df.columns = [
+    pot_col_map[c] if c in pot_col_map else c
+    for c in pot_df.columns
+]
+
+pot_df = pot_df.loc[:, ~pd.Index(pot_df.columns).duplicated()]
     pot_df['sheet'] = 'Potential'; pot_df['lead_status'] = ''
  
     required = ['full_name','region','product_group','lead_status',
