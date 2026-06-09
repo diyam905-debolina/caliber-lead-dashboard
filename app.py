@@ -190,59 +190,123 @@ def df_to_excel(sheets:dict):
 # LOAD EXCEL
 # ─────────────────────────────────────────
 def load_excel(file) -> pd.DataFrame:
+
     xl = pd.ExcelFile(file)
+
+    # ---------- LEAD SHEET ----------
     lead_col_map = {
-        'full name':'full_name','name':'full_name','company':'company',
-        'region':'region','territory':'region',
-        'product group':'product_group','product':'product_group',
-        'lead status':'lead_status','status':'lead_status',
-        'type of source':'type_of_source','source':'type_of_source',
-        'conversion source':'conversion_source','channel':'conversion_source',
-        'created time':'created_time','date':'created_time',
+        'full name': 'full_name',
+        'name': 'full_name',
+        'company': 'company',
+        'region': 'region',
+        'territory': 'region',
+        'product group': 'product_group',
+        'product': 'product_group',
+        'lead status': 'lead_status',
+        'status': 'lead_status',
+        'type of source': 'type_of_source',
+        'source': 'type_of_source',
+        'conversion source': 'conversion_source',
+        'channel': 'conversion_source',
+        'created time': 'created_time',
+        'date': 'created_time',
     }
-    lead_df = xl.parse('Lead',dtype=str).fillna('')
-    lead_df.columns = [c.strip().lower() for c in lead_df.columns]
-    lead_df = lead_df.loc[:, ~lead_df.columns.duplicated()]
+
+    lead_df = xl.parse(sheet_name=0, dtype=str).fillna('')
+
     lead_df.columns = [
-    lead_col_map[c] if c in lead_col_map else c
-    for c in lead_df.columns
-]
+        str(c).strip().lower()
+        for c in lead_df.columns
+    ]
 
-lead_df = lead_df.loc[:, ~pd.Index(lead_df.columns).duplicated()]
-    lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
-    if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
- 
+    lead_df.columns = [
+        lead_col_map[c] if c in lead_col_map else c
+        for c in lead_df.columns
+    ]
+
+    lead_df = lead_df.loc[:, ~pd.Index(lead_df.columns).duplicated()]
+
+    lead_df['sheet'] = 'Lead'
+    lead_df['stage'] = ''
+
+    if 'full_name' not in lead_df.columns:
+        lead_df['full_name'] = ''
+
+    # ---------- POTENTIAL SHEET ----------
     pot_col_map = {
-        'potential name':'full_name','account name':'full_name','name':'full_name',
-        'region':'region','product group':'product_group','prod category':'product_group',
-        'stage':'stage','pipeline stage':'stage',
-        'type of source':'type_of_source','conversion source':'conversion_source',
-        'created time':'created_time',
+        'potential name': 'full_name',
+        'account name': 'full_name',
+        'name': 'full_name',
+        'region': 'region',
+        'product group': 'product_group',
+        'prod category': 'product_group',
+        'stage': 'stage',
+        'pipeline stage': 'stage',
+        'type of source': 'type_of_source',
+        'conversion source': 'conversion_source',
+        'created time': 'created_time',
     }
-    pot_df = xl.parse('Potential',dtype=str).fillna('')
-    pot_df.columns = [c.strip().lower() for c in pot_df.columns]
-    pot_df = pot_df.loc[:, ~pot_df.columns.duplicated()]
-    pot_df.columns = [
-    pot_col_map[c] if c in pot_col_map else c
-    for c in pot_df.columns
-]
 
-pot_df = pot_df.loc[:, ~pd.Index(pot_df.columns).duplicated()]
-    pot_df['sheet'] = 'Potential'; pot_df['lead_status'] = ''
- 
-    required = ['full_name','region','product_group','lead_status',
-                'type_of_source','conversion_source','created_time','stage','sheet']
+    pot_df = xl.parse(sheet_name=1, dtype=str).fillna('')
+
+    pot_df.columns = [
+        str(c).strip().lower()
+        for c in pot_df.columns
+    ]
+
+    pot_df.columns = [
+        pot_col_map[c] if c in pot_col_map else c
+        for c in pot_df.columns
+    ]
+
+    pot_df = pot_df.loc[:, ~pd.Index(pot_df.columns).duplicated()]
+
+    pot_df['sheet'] = 'Potential'
+    pot_df['lead_status'] = ''
+
+    # ---------- REQUIRED COLUMNS ----------
+    required = [
+        'full_name',
+        'region',
+        'product_group',
+        'lead_status',
+        'type_of_source',
+        'conversion_source',
+        'created_time',
+        'stage',
+        'sheet'
+    ]
+
     for col in required:
-        for frame in [lead_df,pot_df]:
-            if col not in frame.columns: frame[col] = ''
- 
-    df = pd.concat([lead_df[required],pot_df[required]],ignore_index=True)
-    df['region']        = df['region'].apply(normalize_region)
+        if col not in lead_df.columns:
+            lead_df[col] = ''
+
+        if col not in pot_df.columns:
+            pot_df[col] = ''
+
+    # ---------- COMBINE ----------
+    df = pd.concat(
+        [
+            lead_df[required],
+            pot_df[required]
+        ],
+        ignore_index=True
+    )
+
+    # ---------- CLEAN ----------
+    df['region'] = df['region'].apply(normalize_region)
+
     df['product_group'] = df['product_group'].apply(normalize_product)
-    df['is_productive']   = df['lead_status'].isin(PRODUCTIVE_STATUSES)
+
+    # ---------- FLAGS ----------
+    df['is_productive'] = df['lead_status'].isin(PRODUCTIVE_STATUSES)
+
     df['is_unproductive'] = df['lead_status'].isin(UNPRODUCTIVE_STATUSES)
-    df['is_pursuing']     = df['lead_status'] == 'Pursuing'
-    df['is_potential']    = df['sheet'] == 'Potential'
+
+    df['is_pursuing'] = df['lead_status'] == 'Pursuing'
+
+    df['is_potential'] = df['sheet'] == 'Potential'
+
     return df
  
 # ─────────────────────────────────────────
