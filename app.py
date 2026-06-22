@@ -1,11 +1,10 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import io, base64
- 
+
 # ─────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────
@@ -15,10 +14,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
- 
+
 # ─── Caliber logo embedded (no upload needed) ───────────────────────────────
 CALIBER_LOGO_B64 = "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"
- 
+
 # ─────────────────────────────────────────
 # CSS
 # ─────────────────────────────────────────
@@ -26,16 +25,9 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 html,body,[class*="css"]{ font-family:'Inter',sans-serif; }
-#MainMenu { visibility: hidden; }
-footer { visibility: hidden; }
-
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    color: white !important;
-}
+#MainMenu,footer,header{ visibility:hidden; }
 .main .block-container{ padding-top:1rem; padding-bottom:2rem; max-width:1400px; }
- 
+
 .logo-bar{
     display:flex; align-items:center; gap:14px;
     padding-bottom:14px; border-bottom:1px solid #eee; margin-bottom:18px;
@@ -46,14 +38,14 @@ footer { visibility: hidden; }
     margin-left:auto; background:#E1F5EE; color:#0F6E56;
     padding:5px 14px; border-radius:20px; font-size:11px; font-weight:600;
 }
- 
+
 [data-testid="stSidebar"]{ background:#1E293B; }
 [data-testid="stSidebar"] *{ color:#E2E8F0 !important; }
 [data-testid="stSidebar"] label{
     color:#94A3B8 !important; font-size:11px !important;
     text-transform:uppercase; letter-spacing:.05em; font-weight:600;
 }
- 
+
 div[data-testid="metric-container"]{
     background:#F8F9FA; border:0.5px solid #EBEBEB; border-radius:10px; padding:14px 18px;
 }
@@ -64,7 +56,7 @@ div[data-testid="metric-container"] label{
 div[data-testid="metric-container"] [data-testid="metric-value"]{
     font-size:26px !important; font-weight:700 !important; color:#1a1a1a !important;
 }
- 
+
 .stTabs [data-baseweb="tab-list"]{ gap:4px; border-bottom:1px solid #eee; }
 .stTabs [data-baseweb="tab"]{
     font-size:12px; font-weight:500; padding:8px 14px;
@@ -74,7 +66,7 @@ div[data-testid="metric-container"] [data-testid="metric-value"]{
     color:#3266ad !important; font-weight:600;
     background:white !important; border-bottom:2px solid #3266ad !important;
 }
- 
+
 .section-title{
     font-size:13px; font-weight:600; color:#1a1a1a;
     margin-bottom:10px; padding-bottom:6px; border-bottom:.5px solid #eee;
@@ -83,7 +75,7 @@ div[data-testid="metric-container"] [data-testid="metric-value"]{
     background:#F0F7FF; border:.5px solid #C3DCFB; border-radius:8px;
     padding:10px 14px; font-size:12px; color:#185FA5; margin-bottom:14px;
 }
- 
+
 /* Insight cards */
 .insight-grid{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
 .insight-card{
@@ -97,11 +89,11 @@ div[data-testid="metric-container"] [data-testid="metric-value"]{
 .insight-icon { font-size:16px; margin-bottom:4px; }
 .insight-title{ font-weight:700; font-size:12px; margin-bottom:3px; }
 .insight-text { color:#555; font-size:11px; }
- 
+
 hr.subtle{ border:none; border-top:.5px solid #eee; margin:14px 0; }
 </style>
 """, unsafe_allow_html=True)
- 
+
 # ─────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────
@@ -122,7 +114,7 @@ CHART_LAYOUT = dict(
     legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),
     height=280,
 )
- 
+
 # ─────────────────────────────────────────
 # INSIGHT HELPER
 # ─────────────────────────────────────────
@@ -133,13 +125,13 @@ def insight_card(icon, title, text, kind='info'):
         <div class="insight-title">{title}</div>
         <div class="insight-text">{text}</div>
     </div>"""
- 
+
 def show_insights(cards_html: list):
     st.markdown(
         '<div class="insight-grid">' + ''.join(cards_html) + '</div>',
         unsafe_allow_html=True
     )
- 
+
 # ─────────────────────────────────────────
 # UTILITIES
 # ─────────────────────────────────────────
@@ -152,17 +144,17 @@ def normalize_region(r):
     if 'APAC'    in r: return 'APAC'
     if 'MENA'    in r: return 'MENA'
     return r
- 
+
 def normalize_product(p):
     if not p or str(p).strip() in ('','nan'): return 'Unknown'
     p = str(p).strip()
     if any(x in p for x in ['D&I','DSG','D & I']): return 'D&I / DSG'
     if ';' in p: return p.split(';')[0].strip()
     return p
- 
+
 def pct(num, den, d=1):
     return round(num/den*100, d) if den > 0 else 0.0
- 
+
 def compute_metrics(df):
     total        = len(df)
     productive   = int(df['is_productive'].sum()) + int(df['is_potential'].sum())
@@ -174,7 +166,7 @@ def compute_metrics(df):
                 prod_pct=pct(productive,total),
                 unprod_pct=pct(unproductive,total),
                 conv_pct=pct(converted,productive))
- 
+
 def breakdown_stats(df, col):
     rows = []
     for val in df[col].unique():
@@ -185,137 +177,97 @@ def breakdown_stats(df, col):
                      'Unprod %':m['unprod_pct'],'Converted':m['converted'],
                      'Conv %':m['conv_pct']})
     return pd.DataFrame(rows).sort_values('Total',ascending=False).reset_index(drop=True)
- 
+
 def df_to_excel(sheets:dict):
     buf = io.BytesIO()
     with pd.ExcelWriter(buf,engine='openpyxl') as w:
         for name,df in sheets.items():
             df.to_excel(w,sheet_name=name[:31],index=False)
     return buf.getvalue()
- 
+
 # ─────────────────────────────────────────
 # LOAD EXCEL
 # ─────────────────────────────────────────
 def load_excel(file) -> pd.DataFrame:
-
     xl = pd.ExcelFile(file)
-
-    # ---------- LEAD SHEET ----------
     lead_col_map = {
-        'full name': 'full_name',
-        'name': 'full_name',
-        'company': 'company',
-        'region': 'region',
-        'territory': 'region',
-        'product group': 'product_group',
-        'product': 'product_group',
-        'lead status': 'lead_status',
-        'status': 'lead_status',
-        'type of source': 'type_of_source',
-        'source': 'type_of_source',
-        'conversion source': 'conversion_source',
-        'channel': 'conversion_source',
-        'created time': 'created_time',
-        'date': 'created_time',
+        'full name':'full_name','name':'full_name','company':'company',
+        'region':'region','territory':'region',
+        'product group':'product_group','product':'product_group',
+        'lead status':'lead_status','status':'lead_status',
+        'type of source':'type_of_source','source':'type_of_source',
+        'conversion source':'conversion_source','channel':'conversion_source',
+        'created time':'created_time','date':'created_time',
     }
+    lead_df = xl.parse('Lead',dtype=str).fillna('')
+    lead_df.columns = [c.strip().lower() for c in lead_df.columns]
+    lead_df = lead_df.rename(columns={c:lead_col_map[c] for c in lead_df.columns if c in lead_col_map})
+    lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
+    if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
 
-    lead_df = xl.parse(sheet_name=0, dtype=str).fillna('')
-
-    lead_df.columns = [
-        str(c).strip().lower()
-        for c in lead_df.columns
-    ]
-
-    lead_df.columns = [
-        lead_col_map[c] if c in lead_col_map else c
-        for c in lead_df.columns
-    ]
-
-    lead_df = lead_df.loc[:, ~pd.Index(lead_df.columns).duplicated()]
-
-    lead_df['sheet'] = 'Lead'
-    lead_df['stage'] = ''
-
-    if 'full_name' not in lead_df.columns:
-        lead_df['full_name'] = ''
-
-    # ---------- POTENTIAL SHEET ----------
     pot_col_map = {
-        'potential name': 'full_name',
-        'account name': 'full_name',
-        'name': 'full_name',
-        'region': 'region',
-        'product group': 'product_group',
-        'prod category': 'product_group',
-        'stage': 'stage',
-        'pipeline stage': 'stage',
-        'type of source': 'type_of_source',
-        'conversion source': 'conversion_source',
-        'created time': 'created_time',
+        'potential name':'full_name','account name':'full_name','name':'full_name',
+        'region':'region','product group':'product_group','prod category':'product_group',
+        'stage':'stage','pipeline stage':'stage',
+        'type of source':'type_of_source','conversion source':'conversion_source',
+        'created time':'created_time',
     }
-
-    pot_df = xl.parse(sheet_name=1, dtype=str).fillna('')
-
-    pot_df.columns = [
-        str(c).strip().lower()
-        for c in pot_df.columns
-    ]
-
-    pot_df.columns = [
-        pot_col_map[c] if c in pot_col_map else c
-        for c in pot_df.columns
-    ]
-
-    pot_df = pot_df.loc[:, ~pd.Index(pot_df.columns).duplicated()]
-
+    pot_df = xl.parse('Potential',dtype=str).fillna('')
+    pot_df.columns = [c.strip().lower() for c in pot_df.columns]
+    pot_df = pot_df.rename(columns={c:pot_col_map[c] for c in pot_df.columns if c in pot_col_map})
     pot_df['sheet'] = 'Potential'
-    pot_df['lead_status'] = ''
+    # FIX 1: Potentials get 'Converted' as lead_status so they show clearly in tables
+    pot_df['lead_status'] = 'Converted'
 
-    # ---------- REQUIRED COLUMNS ----------
-    required = [
-        'full_name',
-        'region',
-        'product_group',
-        'lead_status',
-        'type_of_source',
-        'conversion_source',
-        'created_time',
-        'stage',
-        'sheet'
-    ]
+    # FIX 2: Keep raw lead_source for both sheets to use as fallback for type_of_source
+    # Re-read raw columns to get 'Lead Source' which isn't in the col_map
+    raw_lead = xl.parse('Lead', dtype=str).fillna('')
+    raw_lead.columns = [c.strip().lower() for c in raw_lead.columns]
+    lead_df['lead_source'] = raw_lead['lead source'].values if 'lead source' in raw_lead.columns else ''
 
+    raw_pot = xl.parse('Potential', dtype=str).fillna('')
+    raw_pot.columns = [c.strip().lower() for c in raw_pot.columns]
+    pot_df['lead_source'] = raw_pot['lead source'].values if 'lead source' in raw_pot.columns else ''
+
+    # FIX 3: Potential name — ensure we use 'potential name' col, fallback to 'account name'
+    if 'full_name' not in pot_df.columns or pot_df.get('full_name', pd.Series()).eq('').all():
+        if 'potential name' in raw_pot.columns:
+            pot_df['full_name'] = raw_pot['potential name'].values
+        elif 'account name' in raw_pot.columns:
+            pot_df['full_name'] = raw_pot['account name'].values
+
+    required = ['full_name','region','product_group','lead_status',
+                'type_of_source','lead_source','conversion_source','created_time','stage','sheet']
     for col in required:
-        if col not in lead_df.columns:
-            lead_df[col] = ''
+        for frame in [lead_df,pot_df]:
+            if col not in frame.columns: frame[col] = ''
 
-        if col not in pot_df.columns:
-            pot_df[col] = ''
-
-    # ---------- COMBINE ----------
-    df = pd.concat(
-        [
-            lead_df[required],
-            pot_df[required]
-        ],
-        ignore_index=True
-    )
-
-    # ---------- CLEAN ----------
-    df['region'] = df['region'].apply(normalize_region)
-
+    df = pd.concat([lead_df[required],pot_df[required]],ignore_index=True)
+    df['region']        = df['region'].apply(normalize_region)
     df['product_group'] = df['product_group'].apply(normalize_product)
 
-    # ---------- FLAGS ----------
-    df['is_productive'] = df['lead_status'].isin(PRODUCTIVE_STATUSES)
+    # FIX 4: If type_of_source is blank, use lead_source.
+    # If lead_source says 'event' (any capitalisation), label as 'Event'.
+    def fix_source(row):
+        ts = str(row['type_of_source']).strip()
+        ls = str(row['lead_source']).strip()
+        if ts in ('', 'nan'):
+            if ls.lower() == 'event' or 'event' in ls.lower():
+                return 'Event'
+            return ls if ls not in ('', 'nan') else 'Unknown'
+        # Even if type_of_source is filled, Event keyword wins
+        if ls.lower() == 'event' or ls.lower().startswith('event'):
+            return 'Event'
+        return ts
 
+    df['type_of_source'] = df.apply(fix_source, axis=1)
+
+    df['is_productive']   = df['lead_status'].isin(PRODUCTIVE_STATUSES)
     df['is_unproductive'] = df['lead_status'].isin(UNPRODUCTIVE_STATUSES)
-
-    df['is_pursuing'] = df['lead_status'] == 'Pursuing'
-
-    df['is_potential'] = df['sheet'] == 'Potential'
-
+    df['is_pursuing']     = df['lead_status'] == 'Pursuing'
+    df['is_potential']    = df['sheet'] == 'Potential'
     return df
- 
+
 # ─────────────────────────────────────────
 # CHART HELPERS
 # ─────────────────────────────────────────
@@ -332,7 +284,7 @@ def bar_chart(df,x,y,title='',horizontal=False,colors=None,height=280):
     fig.update_traces(textfont_size=10,textposition='outside')
     fig.update_layout(**{**CHART_LAYOUT,'height':height})
     return fig
- 
+
 def donut_chart(labels,values,colors=None,height=260):
     fig = go.Figure(go.Pie(
         labels=labels,values=values,hole=0.62,
@@ -342,7 +294,7 @@ def donut_chart(labels,values,colors=None,height=260):
     ))
     fig.update_layout(**{**CHART_LAYOUT,'height':height,'showlegend':True})
     return fig
- 
+
 def grouped_bar(categories,datasets,title='',height=300):
     fig = go.Figure()
     for ds in datasets:
@@ -355,7 +307,7 @@ def grouped_bar(categories,datasets,title='',height=300):
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=True,gridcolor='#F0F0F0',zeroline=False)
     return fig
- 
+
 def trend_line(months,datasets,title='',height=320,pct_axis=False):
     fig = go.Figure()
     palette=['#3266ad','#1D9E75','#D85A30','#BA7517','#8B5CF6']
@@ -371,25 +323,54 @@ def trend_line(months,datasets,title='',height=320,pct_axis=False):
     fig.update_yaxes(showgrid=True,gridcolor='#F0F0F0',zeroline=False,
                      ticksuffix='%' if pct_axis else '')
     return fig
- 
+
 # ─────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────
 with st.sidebar:
     st.markdown("## 📊 Lead Analytics")
     st.markdown("---")
-    st.markdown("### Monthly Data")
+
+    # ── Section 1: Current Month ──────────────────────────────────────
+    st.markdown("### 📂 Current Month Data")
+    st.caption("Upload this month's Zoho Excel export")
     uploaded_files = st.file_uploader(
-        "Upload Excel files (.xlsx)",type=['xlsx'],
-        accept_multiple_files=True,
-        help="Upload one or more monthly Zoho CRM Excel exports. Each must have Lead and Potential sheets."
+        "Current month (.xlsx)",
+        type=['xlsx'],
+        accept_multiple_files=False,
+        key="current_upload",
+        help="Upload current month's Excel file. Must have 'Lead' and 'Potential' sheets."
     )
+
     st.markdown("---")
+
+    # ── Section 2: Comparison Data ────────────────────────────────────
+    st.markdown("### 📅 Comparison Data")
+    st.caption("Upload prior months to see trends & comparison")
+    comparison_files = st.file_uploader(
+        "Prior month(s) (.xlsx)",
+        type=['xlsx'],
+        accept_multiple_files=True,
+        key="comparison_upload",
+        help="Upload one or more prior month Excel files. Each must have 'Lead' and 'Potential' sheets."
+    )
+
+    st.markdown("---")
+
+    # ── Section 3: Filters ────────────────────────────────────────────
     if uploaded_files:
-        st.markdown("### Filters")
-        region_filter  = st.multiselect("Region",['Guj & North','South','Mah & Goa','APAC','MENA'],
-                                         default=[],placeholder="All regions")
-        channel_filter = st.selectbox("Channel",["All","Business","Marketing"])
+        st.markdown("### 🔍 Filters")
+        st.caption("Applied to current month only")
+        region_filter  = st.multiselect(
+            "Region",
+            ['Guj & North','South','Mah & Goa','APAC','MENA'],
+            default=[], placeholder="All regions"
+        )
+        channel_filter = st.selectbox("Channel", ["All","Business","Marketing"])
+    else:
+        region_filter  = []
+        channel_filter = "All"
+
     st.markdown("---")
     st.markdown("""
     <div style='font-size:11px;color:#64748B;line-height:1.8;'>
@@ -398,7 +379,7 @@ with st.sidebar:
     Unproductive = Not Interested + Irrelevant + Job/Knowledge + Unresponsive + In Funnel<br>
     Conversion % = Potential / Productive
     </div>""",unsafe_allow_html=True)
- 
+
 # ─────────────────────────────────────────
 # WELCOME SCREEN
 # ─────────────────────────────────────────
@@ -437,26 +418,40 @@ if not uploaded_files:
         </div>
     </div>""",unsafe_allow_html=True)
     st.stop()
- 
+
 # ─────────────────────────────────────────
 # LOAD FILES
 # ─────────────────────────────────────────
 monthly_data = {}
-for f in uploaded_files:
-    label = f.name.replace('.xlsx','').replace('_',' ').replace('-',' ').strip()
-    try:
-        monthly_data[label] = load_excel(f)
-    except Exception as e:
-        st.error(f"⚠️ {f.name}: {e}")
- 
+
+# Load current month (single file)
+curr_label = uploaded_files.name.replace('.xlsx','').replace('_',' ').replace('-',' ').strip()
+try:
+    monthly_data[curr_label] = load_excel(uploaded_files)
+except Exception as e:
+    st.error(f"⚠️ Could not load current month: {e}")
+
+# Load comparison files (multiple prior months)
+if comparison_files:
+    for f in comparison_files:
+        label = f.name.replace('.xlsx','').replace('_',' ').replace('-',' ').strip()
+        if label == curr_label:
+            label = label + " (prior)"
+        try:
+            monthly_data[label] = load_excel(f)
+        except Exception as e:
+            st.error(f"⚠️ {f.name}: {e}")
+
 if not monthly_data:
     st.warning("No valid files loaded. Each Excel must have 'Lead' and 'Potential' sheets.")
     st.stop()
- 
-month_labels  = sorted(monthly_data.keys(),reverse=True)
-current_label = month_labels[0]
+
+# Current month is always the one uploaded in "Current Month Data"
+current_label = curr_label
 df_current    = monthly_data[current_label]
- 
+# All months sorted oldest → newest for trend charts
+month_labels  = sorted(monthly_data.keys())
+
 def apply_filters(df):
     out = df.copy()
     if 'region_filter' in dir() and region_filter:
@@ -464,10 +459,10 @@ def apply_filters(df):
     if 'channel_filter' in dir() and channel_filter != 'All':
         out = out[out['conversion_source']==channel_filter]
     return out
- 
+
 filtered = apply_filters(df_current)
 m        = compute_metrics(filtered)
- 
+
 # ─────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────
@@ -477,7 +472,7 @@ st.markdown(f"""
     <h1>Lead Analytics Dashboard</h1>
     <span class="month-badge">{current_label} &nbsp;·&nbsp; {m['total']} leads</span>
 </div>""",unsafe_allow_html=True)
- 
+
 # ─────────────────────────────────────────
 # TABS
 # ─────────────────────────────────────────
@@ -486,7 +481,7 @@ tab1,tab2,tab3,tab4,tab5,tab6,tab7 = st.tabs([
     "🗺️ Region Performance","📦 Product Performance",
     "🔄 Funnel Movement","📅 Period Comparison"
 ])
- 
+
 # ════════════════════════════════════════════
 # TAB 1  OVERVIEW
 # ════════════════════════════════════════════
@@ -498,9 +493,9 @@ with tab1:
     c4.metric("Pursuing",     m['pursuing'])
     c5.metric("Converted",    m['converted'])
     c6.metric("Conversion %", f"{m['conv_pct']}%")
- 
+
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     # ── Smart insights ─────────────────────────────────────────────────
     st.markdown("<div class='section-title'>💡 Key Insights</div>",unsafe_allow_html=True)
     cards = []
@@ -513,7 +508,7 @@ with tab1:
     else:
         cards.append(insight_card("🟢","Good Lead Quality",
             f"Only {m['unprod_pct']}% unproductive leads. Keep up the quality targeting!","good"))
- 
+
     if m['conv_pct'] >= 80:
         cards.append(insight_card("🏆","Strong Conversion Rate",
             f"{m['conv_pct']}% conversion from productive to potential. Excellent pipeline health!","good"))
@@ -523,7 +518,7 @@ with tab1:
     else:
         cards.append(insight_card("⚠️","Low Conversion Rate",
             f"Only {m['conv_pct']}% productive leads converting. Review engagement quality.","bad"))
- 
+
     biz_count = filtered[filtered['conversion_source']=='Business'].shape[0]
     mkt_count = filtered[filtered['conversion_source']=='Marketing'].shape[0]
     if mkt_count > 0:
@@ -534,14 +529,14 @@ with tab1:
         else:
             cards.append(insight_card("✅","Balanced Channel Mix",
                 f"Business {biz_pct_share}% | Marketing {100-biz_pct_share}% — healthy mix between channels.","good"))
- 
+
     if m['pursuing'] > 0:
         cards.append(insight_card("🔄","Active Pursuing Leads",
             f"{m['pursuing']} leads in Pursuing stage — prioritise follow-ups to move them to productive.","info"))
- 
+
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     col1,col2 = st.columns(2)
     with col1:
         st.markdown("<div class='section-title'>Lead Quality Distribution</div>",unsafe_allow_html=True)
@@ -559,7 +554,7 @@ with tab1:
         fig = donut_chart(['Business','Marketing'],[biz_c,mkt_c],
                           colors=[COLORS['business'],COLORS['marketing']])
         st.plotly_chart(fig,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<div class='section-title'>Unproductive Lead Breakdown</div>",unsafe_allow_html=True)
     ub = filtered[filtered['is_unproductive']]['lead_status'].value_counts().reset_index()
     ub.columns = ['Status','Count']
@@ -567,21 +562,22 @@ with tab1:
     fig = bar_chart(ub,'Status','Count',horizontal=True,
                     colors=['#F09595','#ED93B1','#EF9F27','#AFA9EC','#B4B2A9'],height=180)
     st.plotly_chart(fig,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
     st.download_button("📥 Download Full Report (Excel)",
         data=df_to_excel({'Data':filtered[['full_name','region','product_group',
-                                            'lead_status','type_of_source','conversion_source','stage']]}),
+                                            'lead_status','type_of_source','lead_source',
+                                            'conversion_source','stage']]}),
         file_name=f"Caliber_Report_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 2  CHANNEL PERFORMANCE
 # ════════════════════════════════════════════
 with tab2:
     biz_m = compute_metrics(filtered[filtered['conversion_source']=='Business'])
     mkt_m = compute_metrics(filtered[filtered['conversion_source']=='Marketing'])
- 
+
     # Insights
     cards = []
     if biz_m['conv_pct'] > mkt_m['conv_pct']:
@@ -596,7 +592,7 @@ with tab2:
             f"Marketing brings {mkt_m['total']} leads vs Business {biz_m['total']}. High volume but needs quality improvement.","info"))
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     col1,col2 = st.columns(2)
     with col1:
         st.markdown("<div class='section-title'>🔵 Business Channel</div>",unsafe_allow_html=True)
@@ -620,7 +616,7 @@ with tab2:
                   .value_counts().reset_index())
         mkt_st.columns=['Status','Count']
         st.dataframe(mkt_st,hide_index=True,use_container_width=True)
- 
+
     st.markdown("<div class='section-title'>Side-by-Side Comparison</div>",unsafe_allow_html=True)
     fig = grouped_bar(
         ['Total','Productive','Unproductive','Converted'],
@@ -632,7 +628,7 @@ with tab2:
         data=df_to_excel({'Channel Performance':ch_df}),
         file_name=f"Caliber_Channel_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 3  SOURCE PERFORMANCE
 # ════════════════════════════════════════════
@@ -646,7 +642,7 @@ with tab3:
               .sort_values('Total',ascending=False))
     src_df['Prod %']   = src_df.apply(lambda r:pct(r['Productive'],r['Total']),axis=1)
     src_df['Unprod %'] = src_df.apply(lambda r:pct(r['Unproductive'],r['Total']),axis=1)
- 
+
     # Insights
     cards = []
     if len(src_df) > 0:
@@ -663,12 +659,12 @@ with tab3:
                 f"<b>{top_vol['Source']}</b> drives most volume ({top_vol['Total']} leads) but <b>{best_src['Source']}</b> gives better quality. Balance strategy.","warn"))
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     cols = st.columns(min(len(src_df),5))
     for i,(_,row) in enumerate(src_df.head(5).iterrows()):
         cols[i].metric(row['Source'],int(row['Total']),f"Prod {row['Prod %']}%")
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     col1,col2 = st.columns(2)
     with col1:
         st.markdown("<div class='section-title'>Lead Volume by Source</div>",unsafe_allow_html=True)
@@ -680,7 +676,7 @@ with tab3:
                         horizontal=True,colors=CHART_COLORS)
         fig.update_xaxes(ticksuffix='%')
         st.plotly_chart(fig,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<div class='section-title'>Detailed View</div>",unsafe_allow_html=True)
     st.dataframe(src_df[['Source','Total','Productive','Prod %','Unproductive','Unprod %','Pursuing']],
                  hide_index=True,use_container_width=True)
@@ -688,7 +684,7 @@ with tab3:
         data=df_to_excel({'Source Performance':src_df}),
         file_name=f"Caliber_Source_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 4  REGION PERFORMANCE
 # ════════════════════════════════════════════
@@ -696,7 +692,7 @@ with tab4:
     st.markdown("<div class='info-box'>📌 <b>Marketing Channel Only</b></div>",unsafe_allow_html=True)
     mkt_df = filtered[filtered['conversion_source']=='Marketing']
     rg_df  = breakdown_stats(mkt_df,'region')
- 
+
     # Insights
     cards = []
     if len(rg_df) > 0:
@@ -712,7 +708,7 @@ with tab4:
             f"<b>{top_rg['region']}</b> brings the most leads ({top_rg['Total']}). Ensure quality is maintained while scaling volume.","info"))
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     cols = st.columns(min(len(rg_df),5))
     for i,(_,row) in enumerate(rg_df.head(5).iterrows()):
         cols[i].metric(row['region'],int(row['Total']),f"Prod {row['Prod %']}%")
@@ -733,7 +729,7 @@ with tab4:
         data=df_to_excel({'Region Performance':rg_df}),
         file_name=f"Caliber_Region_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 5  PRODUCT PERFORMANCE
 # ════════════════════════════════════════════
@@ -741,7 +737,7 @@ with tab5:
     st.markdown("<div class='info-box'>📌 <b>Marketing Channel Only</b></div>",unsafe_allow_html=True)
     mkt_df = filtered[filtered['conversion_source']=='Marketing']
     pg_df  = breakdown_stats(mkt_df,'product_group')
- 
+
     # Insights
     cards = []
     if len(pg_df) > 0:
@@ -757,7 +753,7 @@ with tab5:
             f"<b>{top_pg['product_group']}</b> attracts the most marketing leads ({top_pg['Total']}). Ensure follow-up capacity matches demand.","info"))
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     cols = st.columns(min(len(pg_df),6))
     for i,(_,row) in enumerate(pg_df.head(6).iterrows()):
         cols[i].metric(row['product_group'],int(row['Total']),f"Prod {row['Prod %']}%")
@@ -778,7 +774,7 @@ with tab5:
         data=df_to_excel({'Product Performance':pg_df}),
         file_name=f"Caliber_Product_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 6  FUNNEL MOVEMENT
 # ════════════════════════════════════════════
@@ -786,7 +782,7 @@ with tab6:
     potentials = filtered[filtered['is_potential']&(filtered['stage']!='')]
     sc = potentials['stage'].value_counts().reset_index()
     sc.columns = ['Stage','Count']
- 
+
     # Insights
     cards = []
     total_pot = len(potentials)
@@ -811,13 +807,13 @@ with tab6:
                 f"Most leads are in early stages ({early_stage} early vs {late_stage} late). Focus on moving deals through mid-funnel.","warn"))
     show_insights(cards)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     fc = st.columns(len(STAGE_ORDER))
     for i,stage in enumerate(STAGE_ORDER):
         cnt = sc[sc['Stage']==stage]['Count'].values
         fc[i].metric(stage.split('/')[0],int(cnt[0]) if len(cnt) else 0)
     st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     col1,col2 = st.columns(2)
     with col1:
         st.markdown("<div class='section-title'>Stage Distribution</div>",unsafe_allow_html=True)
@@ -833,16 +829,16 @@ with tab6:
         fig = donut_chart(sc_ord['Stage'].tolist(),sc_ord['Count'].tolist(),
                           colors=colors_stage[:len(sc_ord)])
         st.plotly_chart(fig,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<div class='section-title'>All Potential Leads</div>",unsafe_allow_html=True)
-    pot_show = potentials[['full_name','region','product_group','stage','conversion_source']].copy()
-    pot_show.columns=['Name','Region','Product','Stage','Channel']
+    pot_show = potentials[['full_name','region','product_group','lead_status','stage','conversion_source']].copy()
+    pot_show.columns=['Name','Region','Product','Status','Stage','Channel']
     st.dataframe(pot_show,hide_index=True,use_container_width=True)
     st.download_button("📥 Download Funnel Data",
         data=df_to_excel({'Funnel':pot_show}),
         file_name=f"Caliber_Funnel_{current_label.replace(' ','_')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- 
+
 # ════════════════════════════════════════════
 # TAB 7  PERIOD COMPARISON + TRENDS
 # ════════════════════════════════════════════
@@ -854,7 +850,7 @@ with tab7:
         From the sidebar, select and upload 2 or more monthly Excel files together.
         All months will appear as trend lines automatically.
         </div>""",unsafe_allow_html=True)
- 
+
     summary_rows = []
     for label in sorted(monthly_data.keys()):
         mm = compute_metrics(monthly_data[label])
@@ -864,7 +860,7 @@ with tab7:
             'Converted':mm['converted'],'Conv %':mm['conv_pct'],'Pursuing':mm['pursuing']})
     summary = pd.DataFrame(summary_rows)
     months  = summary['Month'].tolist()
- 
+
     # KPI delta
     if len(summary) >= 2:
         curr_r = summary.iloc[-1]; prev_r = summary.iloc[-2]
@@ -874,7 +870,7 @@ with tab7:
         c3.metric("Unproductive", int(curr_r['Unproductive']),int(-(curr_r['Unproductive']-prev_r['Unproductive'])))
         c4.metric("Converted",    int(curr_r['Converted']),   int(curr_r['Converted']-prev_r['Converted']))
         c5.metric("Conversion %", f"{curr_r['Conv %']}%",     f"{round(curr_r['Conv %']-prev_r['Conv %'],1)}%")
- 
+
         # Trend insights
         cards = []
         tot_trend = int(curr_r['Total']-prev_r['Total'])
@@ -900,7 +896,7 @@ with tab7:
                 f"Unproductive % fell by {abs(unprod_trend)}% vs last period. Good improvement in lead quality!","good"))
         show_insights(cards)
         st.markdown("<hr class='subtle'>",unsafe_allow_html=True)
- 
+
     st.markdown("<div class='section-title'>📈 Trend — Volume over Months</div>",unsafe_allow_html=True)
     fig = trend_line(months,
         [{'name':'Total Leads',  'data':summary['Total'].tolist()},
@@ -909,7 +905,7 @@ with tab7:
          {'name':'Converted',    'data':summary['Converted'].tolist()}],
         height=340)
     st.plotly_chart(fig,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<div class='section-title'>📈 Trend — Rates over Months</div>",unsafe_allow_html=True)
     fig2 = trend_line(months,
         [{'name':'Productive %',   'data':summary['Prod %'].tolist()},
@@ -917,7 +913,7 @@ with tab7:
          {'name':'Conversion %',   'data':summary['Conv %'].tolist()}],
         height=300,pct_axis=True)
     st.plotly_chart(fig2,use_container_width=True,config={'displayModeBar':False})
- 
+
     if len(summary) >= 2:
         st.markdown("<div class='section-title'>📊 Month-on-Month Comparison</div>",unsafe_allow_html=True)
         last2 = summary.tail(2)
@@ -930,7 +926,7 @@ with tab7:
               'data':[int(last2.iloc[-2][c]) for c in ['Total','Productive','Unproductive','Converted','Pursuing']],
               'color':'#B4B2A9'}],height=300)
         st.plotly_chart(fig3,use_container_width=True,config={'displayModeBar':False})
- 
+
     st.markdown("<div class='section-title'>All Months Summary</div>",unsafe_allow_html=True)
     st.dataframe(summary,hide_index=True,use_container_width=True)
     st.download_button("📥 Download Comparison Report",
