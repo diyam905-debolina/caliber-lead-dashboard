@@ -190,78 +190,75 @@ def df_to_excel(sheets:dict):
 # ─────────────────────────────────────────
 def load_excel(file) -> pd.DataFrame:
     xl = pd.ExcelFile(file)
-    lead_col_map = {
-        'full name':'full_name','name':'full_name','company':'company',
-        'region':'region','territory':'region',
-        'product group':'product_group','product':'product_group',
-        'lead status':'lead_status','status':'lead_status',
-        'type of source':'type_of_source','source':'type_of_source',
-        'conversion source':'conversion_source','channel':'conversion_source',
-        'created time':'created_time','date':'created_time',
-    }
-    lead_df = xl.parse('Lead',dtype=str).fillna('')
-    lead_df.columns = [c.strip().lower() for c in lead_df.columns]
-    lead_df = lead_df.rename(columns={c:lead_col_map[c] for c in lead_df.columns if c in lead_col_map})
-    lead_df['sheet'] = 'Lead'; lead_df['stage'] = ''
-    if 'full_name' not in lead_df.columns: lead_df['full_name'] = ''
 
-    pot_col_map = {
-        'potential name':'full_name','account name':'full_name','name':'full_name',
-        'region':'region','product group':'product_group','prod category':'product_group',
-        'stage':'stage','pipeline stage':'stage',
-        'type of source':'type_of_source','conversion source':'conversion_source',
-        'created time':'created_time',
-    }
-    pot_df = xl.parse('Potential',dtype=str).fillna('')
-    pot_df.columns = [c.strip().lower() for c in pot_df.columns]
-    pot_df = pot_df.rename(columns={c:pot_col_map[c] for c in pot_df.columns if c in pot_col_map})
-    pot_df['sheet'] = 'Potential'
-    # FIX 1: Potentials get 'Converted' as lead_status so they show clearly in tables
-    pot_df['lead_status'] = 'Converted'
-
-    # FIX 2: Keep raw lead_source for both sheets to use as fallback for type_of_source
-    # Re-read raw columns to get 'Lead Source' which isn't in the col_map
+    # ── LEAD SHEET ──────────────────────────────────────────────────────
     raw_lead = xl.parse('Lead', dtype=str).fillna('')
     raw_lead.columns = [c.strip().lower() for c in raw_lead.columns]
-    lead_df['lead_source'] = raw_lead['lead source'].values if 'lead source' in raw_lead.columns else ''
 
+    lead_df = pd.DataFrame()
+    lead_df['full_name']         = raw_lead.get('full name',        raw_lead.get('name',            pd.Series([''] * len(raw_lead))))
+    lead_df['region']            = raw_lead.get('region',           raw_lead.get('territory',       pd.Series([''] * len(raw_lead))))
+    lead_df['product_group']     = raw_lead.get('product group',    raw_lead.get('product',         pd.Series([''] * len(raw_lead))))
+    lead_df['lead_status']       = raw_lead.get('lead status',      raw_lead.get('status',          pd.Series([''] * len(raw_lead))))
+    lead_df['type_of_source']    = raw_lead.get('type of source',   pd.Series([''] * len(raw_lead)))
+    lead_df['lead_source']       = raw_lead.get('lead source',      pd.Series([''] * len(raw_lead)))
+    lead_df['conversion_source'] = raw_lead.get('conversion source',raw_lead.get('channel',        pd.Series([''] * len(raw_lead))))
+    lead_df['created_time']      = raw_lead.get('created time',     raw_lead.get('date',            pd.Series([''] * len(raw_lead))))
+    lead_df['stage']             = ''
+    lead_df['sheet']             = 'Lead'
+
+    # ── POTENTIAL SHEET ─────────────────────────────────────────────────
     raw_pot = xl.parse('Potential', dtype=str).fillna('')
     raw_pot.columns = [c.strip().lower() for c in raw_pot.columns]
-    pot_df['lead_source'] = raw_pot['lead source'].values if 'lead source' in raw_pot.columns else ''
 
-    # FIX 3: Potential name — ensure we use 'potential name' col, fallback to 'account name'
-    if 'full_name' not in pot_df.columns or pot_df.get('full_name', pd.Series()).eq('').all():
-        if 'potential name' in raw_pot.columns:
-            pot_df['full_name'] = raw_pot['potential name'].values
-        elif 'account name' in raw_pot.columns:
-            pot_df['full_name'] = raw_pot['account name'].values
+    pot_df = pd.DataFrame()
+    # Name: prefer 'potential name', fallback to 'account name'
+    if 'potential name' in raw_pot.columns:
+        pot_df['full_name'] = raw_pot['potential name']
+    elif 'account name' in raw_pot.columns:
+        pot_df['full_name'] = raw_pot['account name']
+    else:
+        pot_df['full_name'] = pd.Series([''] * len(raw_pot))
 
+    pot_df['region']            = raw_pot.get('region',            pd.Series([''] * len(raw_pot)))
+    pot_df['product_group']     = raw_pot.get('product group',     raw_pot.get('prod category',    pd.Series([''] * len(raw_pot))))
+    pot_df['lead_status']       = 'Converted'          # always mark potentials as Converted
+    pot_df['type_of_source']    = raw_pot.get('type of source',    pd.Series([''] * len(raw_pot)))
+    pot_df['lead_source']       = raw_pot.get('lead source',       pd.Series([''] * len(raw_pot)))
+    pot_df['conversion_source'] = raw_pot.get('conversion source', raw_pot.get('channel',          pd.Series([''] * len(raw_pot))))
+    pot_df['created_time']      = raw_pot.get('created time',      raw_pot.get('date',             pd.Series([''] * len(raw_pot))))
+    pot_df['stage']             = raw_pot.get('stage',             raw_pot.get('pipeline stage',   pd.Series([''] * len(raw_pot))))
+    pot_df['sheet']             = 'Potential'
+
+    # ── COMBINE ─────────────────────────────────────────────────────────
     required = ['full_name','region','product_group','lead_status',
-                'type_of_source','lead_source','conversion_source','created_time','stage','sheet']
-    for col in required:
-        for frame in [lead_df,pot_df]:
-            if col not in frame.columns: frame[col] = ''
+                'type_of_source','lead_source','conversion_source',
+                'created_time','stage','sheet']
 
-    df = pd.concat([lead_df[required],pot_df[required]],ignore_index=True)
+    df = pd.concat([lead_df[required], pot_df[required]], ignore_index=True)
+    df = df.fillna('')
+
+    # Normalise region and product
     df['region']        = df['region'].apply(normalize_region)
     df['product_group'] = df['product_group'].apply(normalize_product)
 
-    # FIX 4: If type_of_source is blank, use lead_source.
-    # If lead_source says 'event' (any capitalisation), label as 'Event'.
-    def fix_source(row):
-        ts = str(row['type_of_source']).strip()
-        ls = str(row['lead_source']).strip()
-        if ts in ('', 'nan'):
-            if ls.lower() == 'event' or 'event' in ls.lower():
-                return 'Event'
-            return ls if ls not in ('', 'nan') else 'Unknown'
-        # Even if type_of_source is filled, Event keyword wins
-        if ls.lower() == 'event' or ls.lower().startswith('event'):
+    # Fix source: if type_of_source blank → use lead_source
+    # If lead_source = 'Event' (any case) → show 'Event'
+    def fix_source(ts, ls):
+        ts = str(ts).strip()
+        ls = str(ls).strip()
+        ls_lower = ls.lower()
+        if ls_lower == 'event' or ls_lower.startswith('event'):
             return 'Event'
+        if ts in ('', 'nan'):
+            return ls if ls not in ('', 'nan') else 'Unknown'
         return ts
 
-    df['type_of_source'] = df.apply(fix_source, axis=1)
+    df['type_of_source'] = df.apply(
+        lambda r: fix_source(r['type_of_source'], r['lead_source']), axis=1
+    )
 
+    # Classify rows
     df['is_productive']   = df['lead_status'].isin(PRODUCTIVE_STATUSES)
     df['is_unproductive'] = df['lead_status'].isin(UNPRODUCTIVE_STATUSES)
     df['is_pursuing']     = df['lead_status'] == 'Pursuing'
