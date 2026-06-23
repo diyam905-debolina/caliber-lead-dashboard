@@ -190,9 +190,24 @@ def df_to_excel(sheets:dict):
 # ─────────────────────────────────────────
 def load_excel(file) -> pd.DataFrame:
     xl = pd.ExcelFile(file)
+    sheet_names = xl.sheet_names  # e.g. ['Lead', 'Potential'] or ['Leads','Potentials'] etc.
+
+    # ── Flexible sheet detection ─────────────────────────────────────────
+    # Try to find Lead sheet by name first, fallback to Sheet0 (first sheet)
+    def find_sheet(candidates, fallback_index=0):
+        for name in sheet_names:
+            if name.strip().lower() in [c.lower() for c in candidates]:
+                return name
+        # Fallback: use position
+        if fallback_index < len(sheet_names):
+            return sheet_names[fallback_index]
+        return sheet_names[0]
+
+    lead_sheet = find_sheet(['lead','leads','lead data','lead report'], fallback_index=0)
+    pot_sheet  = find_sheet(['potential','potentials','potential data','deals','opportunity'], fallback_index=1)
 
     # ── LEAD SHEET ──────────────────────────────────────────────────────
-    raw_lead = xl.parse('Lead', dtype=str).fillna('')
+    raw_lead = xl.parse(lead_sheet, dtype=str).fillna('')
     raw_lead.columns = [c.strip().lower() for c in raw_lead.columns]
 
     lead_df = pd.DataFrame()
@@ -208,7 +223,7 @@ def load_excel(file) -> pd.DataFrame:
     lead_df['sheet']             = 'Lead'
 
     # ── POTENTIAL SHEET ─────────────────────────────────────────────────
-    raw_pot = xl.parse('Potential', dtype=str).fillna('')
+    raw_pot = xl.parse(pot_sheet, dtype=str).fillna('')
     raw_pot.columns = [c.strip().lower() for c in raw_pot.columns]
 
     pot_df = pd.DataFrame()
