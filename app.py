@@ -445,20 +445,26 @@ with t1:
     c5.metric("Conversion %",    f"{m['conv_pct']}%",
         help="Converted (Potential) ÷ Productive MQL")
 
-    # Breakdown row that always sums to Total
-    st.markdown(f"""<div class="sumrow">
-    📊 <b>Breakdown:</b> &nbsp;
-    Productive leads <b>{m["prod_from_leads"]}</b> &nbsp;+&nbsp;
-    Converted <b>{m["converted"]}</b> &nbsp;+&nbsp;
-    Unproductive <b>{m["unproductive"]}</b> &nbsp;+&nbsp;
-    Pursuing <b>{m["pursuing"]}</b>
-    {f" &nbsp;+&nbsp; Unclassified <b>{m['unclassified']}</b>" if m["unclassified"] > 0 else ""}
-    &nbsp;= <b style="color:#1a1a1a">Total {m["total"]}</b>
-    &nbsp;&nbsp;|&nbsp;&nbsp;
-    <i>MQL = {m["prod_from_leads"]} productive + {m["converted"]} converted
-    = <b>{m["productive"]}</b></i>
-    </div>""", unsafe_allow_html=True)
+    #st.markdown(f"""
+<div class="sumrow">
+📊 <b>Lead Summary</b><br><br>
 
+<b>Total Leads:</b> {m["total"]}<br>
+
+<b>Lead Productive:</b> {m["prod_from_leads"]}<br>
+
+<b>Converted (Potential):</b> {m["converted"]}<br>
+
+<b>Total Productive (MQL):</b> {m["productive"]}<br>
+
+<b>Pursuing:</b> {m["pursuing"]}<br>
+
+<b>Unproductive:</b> {m["unproductive"]}
+
+{"<br><b>Unclassified:</b> " + str(m["unclassified"]) if m["unclassified"] > 0 else ""}
+
+</div>
+""", unsafe_allow_html=True)
     # Insights
     cards = []
     if m["unprod_pct"] > 50:
