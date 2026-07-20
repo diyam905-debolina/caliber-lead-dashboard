@@ -522,7 +522,7 @@ Converted ({m["converted"]})
 """,
     unsafe_allow_html=True
 )
-    )
+  )
 
 # ═══════════════════════════════════════════════
 # TAB 2  CHANNEL PERFORMANCE
