@@ -817,32 +817,37 @@ with t4:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # # ═══════════════════════════════════════════════
+# # ═══════════════════════════════════════════════
 # TAB 5 - PRODUCT PERFORMANCE
 # ═══════════════════════════════════════════════
+
 with t5:
 
     st.markdown("""
     <div class="infobox">
-    📌 <b>Marketing Channel Performance</b><br>
-    Product Performance is calculated using only records where
+    📌 <b>Marketing Product Performance</b><br>
+    All calculations are based only on records where
     <b>Conversion Source = Marketing</b>.
     </div>
     """, unsafe_allow_html=True)
 
     # ----------------------------------------------------------
-    # Marketing Data Only
+    # Marketing Records Only
     # ----------------------------------------------------------
+
     mkt_only = filtered[
         filtered["conversion_source"]
         .fillna("")
         .astype(str)
         .str.strip()
-        .str.upper() == "MARKETING"
+        .str.upper()
+        .eq("MARKETING")
     ].copy()
 
     # ----------------------------------------------------------
-    # Editable Targets
+    # Editable Product Targets
     # ----------------------------------------------------------
+
     st.markdown(
         "<div class='sec'>📎 Monthly Product Targets</div>",
         unsafe_allow_html=True
@@ -859,7 +864,7 @@ with t5:
         with target_cols[i % 4]:
 
             targets[pg] = st.number_input(
-                pg,
+                label=pg,
                 min_value=0,
                 value=DEFAULT_TARGETS.get(pg, 0),
                 step=1,
@@ -883,33 +888,45 @@ with t5:
 
     for pg in pg_list:
 
+        # Only Marketing records of this Product Group
         sub = mkt_only[
             mkt_only["product_group"] == pg
         ].copy()
 
-        lead_df = sub[sub["is_potential"] == False]
+        # Marketing Leads
+        lead_df = sub[~sub["is_potential"]]
 
-        potential_df = sub[sub["is_potential"] == True]
+        # Marketing Potentials
+        potential_df = sub[sub["is_potential"]]
 
         target = targets[pg]
 
-        received = len(lead_df)
+        marketing_leads = len(lead_df)
 
+        marketing_potentials = len(potential_df)
+
+        # Total Marketing Records
+        total_marketing = marketing_leads + marketing_potentials
+
+        # Productive Leads
         productive_leads = lead_df[
             lead_df["lead_status"].isin(productive_status)
         ].shape[0]
 
-        converted = len(potential_df)
+        # Productive Total
+        productive = productive_leads + marketing_potentials
 
-        productive = productive_leads + converted
-
+        # Unproductive
         unproductive = lead_df[
             ~lead_df["lead_status"].isin(
                 productive_status + ["Pursuing"]
             )
         ].shape[0]
 
-        remaining = max(target - received, 0)
+        # Pursuing
+        pursuing = lead_df[
+            lead_df["lead_status"] == "Pursuing"
+        ].shape[0]
 
         rows.append({
 
@@ -917,180 +934,27 @@ with t5:
 
             "Target": target,
 
-            "Actual Leads": received,
+            "Total Marketing Leads": total_marketing,
 
-            "Remaining Target": remaining,
+            "Remaining Target": max(target - total_marketing, 0),
 
             "Productive": productive,
 
-            "Prod %": pct(productive, received),
+            "Productive %": pct(productive, total_marketing),
 
             "Unproductive": unproductive,
 
-            "Unprod %": pct(unproductive, received),
+            "Unproductive %": pct(unproductive, total_marketing),
 
-            "Converted": converted,
+            "Pursuing": pursuing,
 
-            "Conv %": pct(converted, productive)
+            "Converted": marketing_potentials,
+
+            "Conversion %": pct(marketing_potentials, productive)
 
         })
 
     pg_table = pd.DataFrame(rows)
-
-    # ----------------------------------------------------------
-    # KPI
-    # ----------------------------------------------------------
-
-    total_target = pg_table["Target"].sum()
-
-    total_actual = pg_table["Actual Leads"].sum()
-
-    total_converted = pg_table["Converted"].sum()
-
-    overall = pct(total_actual, total_target)
-
-    k1, k2, k3, k4 = st.columns(4)
-
-    k1.metric("Total Target", total_target)
-
-    k2.metric("Actual Leads", total_actual)
-
-    k3.metric("Achievement", f"{overall}%")
-
-    k4.metric("Converted", total_converted)
-
-    st.markdown("<hr class='sub'>", unsafe_allow_html=True)
-
-    # ----------------------------------------------------------
-    # Charts
-    # ----------------------------------------------------------
-
-    c1, c2 = st.columns(2)
-
-    with c1:
-
-        st.markdown(
-            "<div class='sec'>Target vs Actual Leads</div>",
-            unsafe_allow_html=True
-        )
-
-        fig = go.Figure()
-
-        fig.add_trace(
-            go.Bar(
-                name="Target",
-                x=pg_table["Product Group"],
-                y=pg_table["Target"]
-            )
-        )
-
-        fig.add_trace(
-            go.Bar(
-                name="Actual",
-                x=pg_table["Product Group"],
-                y=pg_table["Actual Leads"]
-            )
-        )
-
-        fig.update_layout(
-            **{**CHART_LAYOUT,
-               "barmode": "group",
-               "height": 300}
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True,
-            config={"displayModeBar": False}
-        )
-
-    with c2:
-
-        st.markdown(
-            "<div class='sec'>Productive vs Unproductive %</div>",
-            unsafe_allow_html=True
-        )
-
-        fig2 = go.Figure()
-
-        fig2.add_trace(
-            go.Bar(
-                name="Productive %",
-                x=pg_table["Product Group"],
-                y=pg_table["Prod %"]
-            )
-        )
-
-        fig2.add_trace(
-            go.Bar(
-                name="Unproductive %",
-                x=pg_table["Product Group"],
-                y=pg_table["Unprod %"]
-            )
-        )
-
-        fig2.update_layout(
-            **{**CHART_LAYOUT,
-               "barmode": "group",
-               "height": 300}
-        )
-
-        st.plotly_chart(
-            fig2,
-            use_container_width=True,
-            config={"displayModeBar": False}
-        )
-
-    # ----------------------------------------------------------
-    # Conditional Formatting
-    # ----------------------------------------------------------
-
-    def highlight(row):
-
-        style = [""] * len(row)
-
-        cols = list(row.index)
-
-        if row["Actual Leads"] < row["Target"]:
-
-            style[cols.index("Actual Leads")] = \
-                "background-color:#FDE2E1;color:#C62828;font-weight:bold;"
-
-        if row["Prod %"] < 25:
-
-            style[cols.index("Prod %")] = \
-                "background-color:#FFF3CD;color:#9A6700;font-weight:bold;"
-
-        if row["Conv %"] < 60:
-
-            style[cols.index("Conv %")] = \
-                "background-color:#FDE2E1;color:#C62828;font-weight:bold;"
-
-        return style
-
-    st.markdown(
-        "<div class='sec'>Product Performance Summary</div>",
-        unsafe_allow_html=True
-    )
-
-    st.dataframe(
-        pg_table.style.apply(highlight, axis=1),
-        hide_index=True,
-        use_container_width=True
-    )
-
-    # ----------------------------------------------------------
-    # Download
-    # ----------------------------------------------------------
-
-    st.download_button(
-        "📥 Download Product Performance",
-        data=df_to_excel({
-            "Product Performance": pg_table
-        }),
-        file_name=f"Product_Performance_{current_label.replace(' ','_')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 # ═══════════════════════════════════════════════
 # TAB 6  FUNNEL MOVEMENT
 # ═══════════════════════════════════════════════
