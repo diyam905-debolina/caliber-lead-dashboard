@@ -447,7 +447,7 @@ with t1:
 
     #st.markdown(f"""
 <div class="sumrow">
-📊 <b>Lead Summary</b><br><br>
+<b>Lead Summary</b><br><br>
 
 <b>Total Leads:</b> {m["total"]}<br>
 
