@@ -435,7 +435,7 @@ t1,t2,t3,t4,t5,t6,t7 = st.tabs([
 # ═══════════════════════════════════════════════
 with t1:
 
-    # ================= KPI Cards =================
+    # ================= KPI CARDS =================
     c1, c2, c3, c4, c5 = st.columns(5)
 
     c1.metric("Total Leads", m["total"])
@@ -449,7 +449,7 @@ with t1:
     c3.metric(
         "Unproductive",
         m["unproductive"],
-        help="All Lead Sheet statuses except Productive and Pursuing"
+        help="All Lead statuses except Productive and Pursuing"
     )
 
     c4.metric(
@@ -460,68 +460,202 @@ with t1:
     c5.metric(
         "Conversion %",
         f"{m['conv_pct']}%",
-        help="Converted (Potential) ÷ Productive MQL"
+        help="Converted (Potential) ÷ Productive (MQL)"
     )
-# ================= Lead Summary =================
 
-st.markdown(
-    f"""
-<div class="sumrow">
+    # ================= INSIGHTS =================
 
-<h4 style="margin-bottom:12px;">📊 Lead Summary</h4>
+    cards = []
 
-<table style="width:100%; font-size:15px;">
+    if m["unprod_pct"] > 50:
+        cards.append(
+            ic(
+                "🔴",
+                "High Unproductive Rate",
+                f"{m['unprod_pct']}% of leads are unproductive. Review lead qualification.",
+                "bad"
+            )
+        )
+    else:
+        cards.append(
+            ic(
+                "🟢",
+                "Good Lead Quality",
+                f"Only {m['unprod_pct']}% of leads are unproductive.",
+                "good"
+            )
+        )
 
-<tr>
-<td style="padding:6px;"><b>Total Leads</b></td>
-<td style="padding:6px;">{m["total"]}</td>
-</tr>
+    if m["conv_pct"] >= 70:
+        cards.append(
+            ic(
+                "🏆",
+                "Excellent Conversion",
+                f"{m['conv_pct']}% conversion achieved.",
+                "good"
+            )
+        )
 
-<tr>
-<td style="padding:6px;"><b>Lead Productive</b></td>
-<td style="padding:6px;">{m["prod_from_leads"]}</td>
-</tr>
+    elif m["conv_pct"] >= 40:
+        cards.append(
+            ic(
+                "📈",
+                "Healthy Conversion",
+                f"{m['conv_pct']}% conversion. Continue regular follow-ups.",
+                "info"
+            )
+        )
 
-<tr>
-<td style="padding:6px;"><b>Converted (Potential)</b></td>
-<td style="padding:6px;">{m["converted"]}</td>
-</tr>
+    else:
+        cards.append(
+            ic(
+                "⚠️",
+                "Low Conversion",
+                f"Only {m['conv_pct']}% conversion. Review engagement quality.",
+                "bad"
+            )
+        )
 
-<tr>
-<td style="padding:6px;"><b>Total Productive (MQL)</b></td>
-<td style="padding:6px;"><b>{m["productive"]}</b></td>
-</tr>
+    if m["pursuing"] > 0:
+        cards.append(
+            ic(
+                "🔄",
+                "Active Opportunities",
+                f"{m['pursuing']} leads are currently in Pursuing stage.",
+                "info"
+            )
+        )
 
-<tr>
-<td style="padding:6px;"><b>Pursuing</b></td>
-<td style="padding:6px;">{m["pursuing"]}</td>
-</tr>
+    show_insights(cards)
 
-<tr>
-<td style="padding:6px;"><b>Unproductive</b></td>
-<td style="padding:6px;">{m["unproductive"]}</td>
-</tr>
+    st.markdown("<hr class='sub'>", unsafe_allow_html=True)
 
-{"<tr><td style='padding:6px;'><b>Unclassified</b></td><td style='padding:6px;'>" + str(m["unclassified"]) + "</td></tr>" if m["unclassified"] > 0 else ""}
+    # ================= CHARTS =================
 
-</table>
+    col1, col2 = st.columns(2)
 
-<hr style="margin-top:12px;margin-bottom:8px;">
+    with col1:
 
-<p style="font-size:14px;color:#555;">
-<b>Formula:</b><br>
-Productive (MQL) =
-Lead Productive ({m["prod_from_leads"]})
-+
-Converted ({m["converted"]})
-=
-<b>{m["productive"]}</b>
-</p>
+        st.markdown(
+            "<div class='sec'>Lead Quality Distribution</div>",
+            unsafe_allow_html=True
+        )
 
-</div>
-""",
-    unsafe_allow_html=True
-)
+        fig = donut(
+            ["Converted", "Lead Productive", "Unproductive", "Pursuing"],
+            [
+                m["converted"],
+                m["prod_from_leads"],
+                m["unproductive"],
+                m["pursuing"]
+            ],
+            colors=[
+                "#1D9E75",
+                "#3266ad",
+                "#D85A30",
+                "#BA7517"
+            ]
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={"displayModeBar": False}
+        )
+
+    with col2:
+
+        st.markdown(
+            "<div class='sec'>Conversion Contribution by Channel</div>",
+            unsafe_allow_html=True
+        )
+
+        biz_c = filtered[
+            (filtered["conversion_source"] == "Business") &
+            (filtered["is_potential"])
+        ].shape[0]
+
+        mkt_c = filtered[
+            (filtered["conversion_source"] == "Marketing") &
+            (filtered["is_potential"])
+        ].shape[0]
+
+        fig = donut(
+            ["Business", "Marketing"],
+            [biz_c, mkt_c],
+            colors=[
+                "#185FA5",
+                "#1D9E75"
+            ]
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={"displayModeBar": False}
+        )
+
+    # ================= UNPRODUCTIVE BREAKDOWN =================
+
+    st.markdown(
+        "<div class='sec'>Unproductive Lead Breakdown</div>",
+        unsafe_allow_html=True
+    )
+
+    ub = (
+        filtered[
+            filtered["is_unproductive"]
+        ]["lead_status"]
+        .value_counts()
+        .reset_index()
+    )
+
+    ub.columns = ["Status", "Count"]
+
+    fig = bar(
+        ub,
+        "Status",
+        "Count",
+        horizontal=True,
+        colors=[
+            "#F09595",
+            "#ED93B1",
+            "#EF9F27",
+            "#AFA9EC",
+            "#B4B2A9"
+        ],
+        height=220
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False}
+    )
+
+    st.markdown("<hr class='sub'>", unsafe_allow_html=True)
+
+    # ================= DOWNLOAD =================
+
+    st.download_button(
+        "📥 Download Full Report",
+        data=df_to_excel({
+            "Data": filtered[
+                [
+                    "full_name",
+                    "region",
+                    "product_group",
+                    "lead_status",
+                    "type_of_source",
+                    "lead_source",
+                    "conversion_source",
+                    "stage"
+                ]
+            ]
+        }),
+        file_name=f"Caliber_Report_{current_label.replace(' ', '_')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 # ═══════════════════════════════════════════════
 # TAB 2  CHANNEL PERFORMANCE
 # ═══════════════════════════════════════════════
