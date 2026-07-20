@@ -773,7 +773,14 @@ with t3:
 with t4:
     st.markdown("""<div class="infobox">
     📌 <b>Marketing Channel Only</b></div>""", unsafe_allow_html=True)
-    mkt_only = filtered[filtered["conversion_source"] == "Marketing"]
+    mkt_only = filtered[
+    filtered["conversion_source"]
+    .fillna("")
+    .astype(str)
+    .str.strip()
+    .str.upper()
+    == "MARKETING"
+].copy()
     rg_df    = breakdown_stats(mkt_only, "region")
 
     cards = []
